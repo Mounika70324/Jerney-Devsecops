@@ -1,4 +1,5 @@
 name: Terraform Deployment
+
 on: [push]
 
 permissions:
@@ -8,6 +9,7 @@ permissions:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     defaults:
       run:
         working-directory: ./terraform
@@ -15,16 +17,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Fetch Keys from Vault
       - name: Debug GitHub OIDC claims
-  shell: bash
-  run: |
-    TOKEN=$(curl -sS \
-      -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
-      "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=https://github.com" \
-      | jq -r '.value')
+        shell: bash
+        run: |
+          TOKEN=$(curl -sS \
+            -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=https://github.com" \
+            | jq -r '.value')
 
-    echo "$TOKEN" | cut -d '.' -f2 | base64 -d 2>/dev/null | jq '{iss, aud, sub}'
+          echo "$TOKEN" | cut -d '.' -f2 | base64 -d 2>/dev/null | jq '{iss, aud, sub}'
+
+      - name: Fetch Keys from Vault
         uses: hashicorp/vault-action@v3
         with:
           url: http://100.53.65.84:8200
@@ -36,6 +39,9 @@ jobs:
             aws/creds/terraform-role secret_key | AWS_SECRET_ACCESS_KEY
 
       - uses: hashicorp/setup-terraform@v3
+
       - run: terraform init
+
       - run: terraform plan
+
       - run: terraform apply -auto-approve
